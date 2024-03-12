@@ -73,8 +73,9 @@ def main():
         sock.settimeout(timeo)
 
         sock.connect(arguments.socket)
-        sock.send(' '.join(arguments.query), maxcmdlength)
+        sock.send(' '.join(arguments.query).encode(), maxcmdlength)
         data = sock.recv(maxcmdlength)
+        data = data.decode()
 
         starttime = None
         lr = list()
