@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 import argparse
 import socket
 import re
@@ -11,6 +10,7 @@ timeout = 10
 
 
 def parse_result(query):
+    w = None
     try:
         w, r = query.split('+')
 
@@ -18,9 +18,9 @@ def parse_result(query):
         r = int(r.split(':')[1])
 
     except (ValueError, KeyError):
-        return (w, 'error')
+        return w, 'error'
 
-    return (w, r)
+    return w, r
 
 
 def extract_intervals(queries):
@@ -36,10 +36,21 @@ def extract_intervals(queries):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', dest='socket', required=True, type=str, help='AMS inspection socket')
-    parser.add_argument('-q', dest='query', action='append', required=True, type=str, help='Query')
-    parser.add_argument('-c', dest='threshold', action='append', required=True, type=int, help='Threshold')
-    parser.add_argument('-t', dest='timeout', required=False, type=int, help='Timeout')
+    parser.add_argument(
+        '-s', dest='socket', required=True, type=str,
+        help='AMS inspection socket'
+    )
+    parser.add_argument(
+        '-q', dest='query', action='append', required=True, type=str,
+        help='Query'
+    )
+    parser.add_argument(
+        '-c', dest='threshold', action='append', required=True, type=int,
+        help='Threshold'
+    )
+    parser.add_argument(
+        '-t', dest='timeout', required=False, type=int, help='Timeout'
+    )
     arguments = parser.parse_args()
 
     nr = NagiosResponse()
@@ -47,17 +58,18 @@ def main():
     if len(arguments.threshold) != len(arguments.query):
         nr.setCode(2)
         nr.writeCriticalMessage('Wrong arguments')
-        print nr.getMsg()
+        print(nr.getMsg())
         raise SystemExit(nr.getCode())
 
     if arguments.timeout:
         timeo = arguments.timeout
+
     else:
         timeo = timeout
 
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.setblocking(0)
+        sock.setblocking(False)
         sock.settimeout(timeo)
 
         sock.connect(arguments.socket)
@@ -76,18 +88,21 @@ def main():
         now = int(time.time())
         if now - starttime < 60 * max(intervals):
             nr.setCode(1)
-            nr.writeWarningMessage('No results yet, ams-publisher is not running for %d minutes' % max(intervals))
-            print nr.getMsg()
+            nr.writeWarningMessage(
+                f'No results yet, ams-publisher is not running for '
+                f'{max(intervals)} minutes'
+            )
+            print(nr.getMsg())
             raise SystemExit(nr.getCode())
 
         error = False
         for e in lr:
             if e[1] == 'error':
                 nr.setCode(2)
-                nr.writeCriticalMessage('Worker {0} {1}'.format(e[0], e[1]))
+                nr.writeCriticalMessage(f'Worker {e[0]} {e[1]}')
                 error = True
         if error:
-            print nr.getMsg()
+            print(nr.getMsg())
             raise SystemExit(nr.getCode())
 
         error = False
@@ -97,41 +112,46 @@ def main():
             e = lr[i]
             if e[1] < arguments.threshold[i]:
                 nr.setCode(2)
-                nr.writeCriticalMessage('Worker {0} published {1} (threshold {2} in {3} minutes)'.\
-                                        format(e[0], e[1], arguments.threshold[i], intervals[i]))
+                nr.writeCriticalMessage(
+                    f'Worker {e[0]} published {e[1]} (threshold '
+                    f'{arguments.threshold[i]} in {intervals[i]} minutes)'
+                )
                 error = True
-            i+=1
+
+            i += 1
 
         if error:
-            print nr.getMsg()
+            print(nr.getMsg())
             raise SystemExit(nr.getCode())
         else:
             i = 0
             nr.setCode(0)
             while i < len(lr):
                 e = lr[i]
-                nr.writeOkMessage('Worker {0} published {1} (threshold {2} in {3} minutes)'.\
-                                  format(e[0], e[1], arguments.threshold[i], intervals[i]))
-                i+=1
+                nr.writeOkMessage(
+                    f'Worker {e[0]} published {e[1]} (threshold '
+                    f'{arguments.threshold[i]} in {intervals[i]} minutes)'
+                )
+                i += 1
 
-            print nr.getMsg()
+            print(nr.getMsg())
             raise SystemExit(nr.getCode())
 
-
-    except socket.timeout as e:
+    except socket.timeout:
         nr.setCode(2)
-        nr.writeCriticalMessage('Socket response timeout after {0}s'.format(timeo))
-        print nr.getMsg()
+        nr.writeCriticalMessage(f'Socket response timeout after {timeo} s')
+        print(nr.getMsg())
         raise SystemExit(nr.getCode())
 
     except socket.error as e:
         nr.setCode(2)
-        nr.writeCriticalMessage('Socket error: {0}'.format(str(e)))
-        print nr.getMsg()
+        nr.writeCriticalMessage(f'Socket error: {str(e)}')
+        print(nr.getMsg())
         raise SystemExit(nr.getCode())
 
     finally:
         sock.close()
+
 
 if __name__ == "__main__":
     main()
