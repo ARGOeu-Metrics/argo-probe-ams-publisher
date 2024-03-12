@@ -11,8 +11,9 @@ def get_ver():
         for line in open(NAME+'.spec'):
             if "Version:" in line:
                 return line.split()[1]
+
     except IOError:
-        print "Make sure that %s is in directory"  % (NAME+'.spec')
+        print(f"Make sure that {NAME}.spec is in directory")
         sys.exit(1)
 
 
@@ -27,4 +28,4 @@ setup(name=NAME,
       data_files=[(NAGIOSPLUGINS, glob.glob('src/*'))],
       packages=['argo_probe_ams_publisher'],
       package_dir={'argo_probe_ams_publisher': 'modules/'},
-      )
+)
