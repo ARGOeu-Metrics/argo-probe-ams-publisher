@@ -2,7 +2,7 @@
 
 Name:      argo-probe-ams-publisher
 Summary:   Probe checking AMS publisher.
-Version:   0.1.0
+Version:   0.2.0
 Release:   1%{?dist}
 License:   ASL 2.0
 Source0:   %{name}-%{version}.tar.gz
@@ -33,5 +33,7 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Apr 4 2024 Katarina Zailac <kzailac@srce.hr> - 0.2.0-1%{?dist}
+- ARGO-4506 Switch argo-probe-ams-publisher to Py3
 * Fri Jun 10 2022 Katarina Zailac <kzailac@gmail.com> - 0.1.0-1%{?dist}
 - AO-650 Harmonize argo-mon probes
