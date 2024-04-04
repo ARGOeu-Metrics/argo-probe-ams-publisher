@@ -4,7 +4,7 @@ PKGVERSION=$(shell grep -s '^Version:' $(SPECFILE) | sed -e 's/Version: *//')
 
 dist:
 	rm -rf dist
-	python setup.py sdist
+	python3 setup.py sdist
 	mv dist/${PKGNAME}-${PKGVERSION}.tar.gz .
 	rm -rf dist
 
@@ -20,4 +20,6 @@ clean:
 	rm -rf ${PKGNAME}-${PKGVERSION}.tar.gz
 	rm -f MANIFEST
 	rm -rf dist
+	rm -rf **/*.pyc
+	rm -rf **/*.pyo
 
